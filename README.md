@@ -18,6 +18,7 @@ A practical, vendor-neutral collection of enterprise architecture patterns, Arch
 ## Repository map
 
 - `docs/adr/` — real architecture decisions and trade-offs
+- `docs/hld/` — complete reference solution designs with Mermaid diagrams
 - `docs/templates/` — reusable ADR and HLD templates
 - `checklists/` — practical architecture review controls
 - `scripts/` — documentation quality validation
@@ -35,10 +36,14 @@ The repository evolves through small, reviewable improvements. Each change must 
 4. Include observability, resilience, security, and ownership by design.
 5. Keep examples generic and free of confidential or proprietary information.
 
+## Featured reference architecture
+
+- [Cloud-Native Integration Platform HLD](docs/hld/cloud-native-integration-platform.md) — APIs, events, security, reliability, observability, NFRs, DevSecOps, and three Mermaid diagrams.
+- [Integration Pattern Selection ADR](docs/adr/ADR-0002-integration-pattern-selection.md) — decision framework for synchronous, asynchronous, and hybrid integration.
+
 ## Current roadmap
 
-- Add reference ADRs for API, event-driven, and data-integration decisions.
-- Add an HLD example for a cloud-native integration platform.
+- Add reference ADRs for data, security, and platform decisions.
 - Add DevSecOps and operational-readiness checklists.
 - Add AI/LLM architecture guardrails and evaluation criteria.
 
