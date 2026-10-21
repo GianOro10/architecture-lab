@@ -1,0 +1,7 @@
+[
+  "tests/test_api.py::test_health_and_readiness",
+  "tests/test_api.py::test_ingest_and_grounded_query_with_citation",
+  "tests/test_api.py::test_invalid_tenant_identifier_is_rejected",
+  "tests/test_api.py::test_prompt_injection_is_rejected",
+  "tests/test_api.py::test_tenant_isolation"
+]

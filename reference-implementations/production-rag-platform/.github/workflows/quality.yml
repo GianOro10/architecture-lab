@@ -1,0 +1,76 @@
+name: Quality and security
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  application:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: app/pyproject.toml
+      - name: Install application and quality tools
+        run: |
+          python -m pip install --upgrade 'pip>=26.2'
+          python -m pip install -e 'app[dev]'
+      - name: Lint
+        run: ruff check app/src app/tests
+      - name: Test
+        run: pytest app/tests
+      - name: Audit Python dependencies
+        run: pip-audit
+
+  infrastructure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: hashicorp/setup-terraform@v4
+      - name: Terraform format
+        run: terraform -chdir=infra/terraform fmt -check -recursive
+      - name: Terraform initialize
+        run: terraform -chdir=infra/terraform init -backend=false
+      - name: Terraform validate
+        run: terraform -chdir=infra/terraform validate
+
+  configuration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Parse YAML documents
+        run: |
+          python -m pip install 'pyyaml>=6,<7'
+          python - <<'PY'
+          from pathlib import Path
+          import yaml
+
+          paths = list(Path("deploy").rglob("*.yaml")) + list(Path("observability").rglob("*.yaml"))
+          for path in paths:
+              with path.open(encoding="utf-8") as stream:
+                  documents = [document for document in yaml.safe_load_all(stream) if document]
+              if not documents:
+                  raise SystemExit(f"No YAML documents found in {path}")
+              print(f"validated {path}: {len(documents)} document(s)")
+          PY
+
+  container:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build non-published image
+        run: docker build --tag production-rag-platform:${{ github.sha }} --file app/Dockerfile app
