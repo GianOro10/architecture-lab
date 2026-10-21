@@ -22,6 +22,7 @@ A practical, vendor-neutral collection of enterprise architecture patterns, Arch
 - `docs/templates/` — reusable ADR and HLD templates
 - `checklists/` — practical architecture review controls
 - `scripts/` — documentation quality validation
+- `reference-implementations/` — executable architecture examples with tests and delivery controls
 - `.github/workflows/` — automated quality checks
 
 ## Working cadence
@@ -38,14 +39,15 @@ The repository evolves through small, reviewable improvements. Each change must 
 
 ## Featured reference architecture
 
+- [Production RAG Platform Reference](reference-implementations/production-rag-platform/) — executable FastAPI service with grounded responses and citations, Terraform for AWS, hardened Kubernetes, OpenTelemetry, SLO alerts, security controls, tests, and CI.
 - [Cloud-Native Integration Platform HLD](docs/hld/cloud-native-integration-platform.md) — APIs, events, security, reliability, observability, NFRs, DevSecOps, and three Mermaid diagrams.
 - [Integration Pattern Selection ADR](docs/adr/ADR-0002-integration-pattern-selection.md) — decision framework for synchronous, asynchronous, and hybrid integration.
 
 ## Current roadmap
 
-- Add reference ADRs for data, security, and platform decisions.
-- Add DevSecOps and operational-readiness checklists.
-- Add AI/LLM architecture guardrails and evaluation criteria.
+- Add an automated RAG evaluation dataset and quality thresholds.
+- Add GitOps promotion and signed container provenance.
+- Add a second cloud deployment mapping to demonstrate portability trade-offs.
 
 ## Author
 
