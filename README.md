@@ -1,6 +1,7 @@
 # Architecture Lab
 
 [![Architecture Quality](https://github.com/GianOro10/architecture-lab/actions/workflows/architecture-quality.yml/badge.svg)](https://github.com/GianOro10/architecture-lab/actions/workflows/architecture-quality.yml)
+[![Production RAG Quality](https://github.com/GianOro10/architecture-lab/actions/workflows/reference-implementation-quality.yml/badge.svg)](https://github.com/GianOro10/architecture-lab/actions/workflows/reference-implementation-quality.yml)
 
 A practical, vendor-neutral collection of enterprise architecture patterns, Architecture Decision Records (ADRs), High-Level Design (HLD) templates, and review checklists.
 
