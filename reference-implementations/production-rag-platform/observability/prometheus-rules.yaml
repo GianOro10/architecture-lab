@@ -23,10 +23,17 @@ groups:
           summary: RAG query p95 latency is above 2 seconds
           runbook_url: docs/runbooks/query-degradation.md
       - alert: RagApiNoSuccessfulQueries
-        expr: sum(rate(rag_requests_total{operation="query",outcome="success"}[10m])) == 0
+        expr: |
+          (
+            sum(rate(rag_requests_total{operation="query",outcome="success"}[10m]))
+            or vector(0)
+          ) == 0
+          and
+          sum(rate(rag_requests_total{operation="query"}[10m])) > 0
         for: 15m
         labels:
           severity: critical
         annotations:
-          summary: No successful RAG queries observed
+          summary: No successful RAG queries observed while query traffic is present
+          description: Prevents false positives during idle periods by requiring query traffic.
           runbook_url: docs/runbooks/query-degradation.md
