@@ -1,7 +1,7 @@
 # High-Level Design: Cloud-Native Integration Platform
 
 - **Status:** Reference architecture
-- **Version:** 1.0
+- **Version:** 1.1
 - **Audience:** Solution architects, platform engineers, security, operations, and delivery teams
 
 ## 1. Executive summary
@@ -166,6 +166,54 @@ flowchart TB
 | Dead-letter handling | Owned queue, alert, triage, and replay procedure |
 | Reconciliation | Detect and repair incomplete or inconsistent processing |
 | Recovery | Tested backup, restore, RTO, and RPO procedures |
+
+### Failure and recovery flow
+
+```mermaid
+flowchart LR
+    S[Integration Service] -->|Atomic commit| O[(Transactional Outbox)]
+    O -->|Relay and publish| B[(Event Broker)]
+    B -->|At-least-once delivery| C[Idempotent Consumer]
+    C -->|Retry budget exhausted| D[(Dead-Letter Queue)]
+    C -->|Success| P[(Processed State)]
+    D -->|Authorized replay| B
+```
+
+The platform uses at-least-once delivery. It prevents event loss by committing the business change and its event in the same local transaction, and it prevents duplicate business effects through consumer idempotency. Exactly-once transport delivery is not assumed.
+
+#### Failure behavior and recovery controls
+
+| Scenario | Required behavior | Recovery and evidence |
+|---|---|---|
+| Broker unavailable before publication | The service commits the business state and event atomically to the outbox. The relay retains the pending record, retries with exponential backoff and jitter, and does not mark it as published until the broker acknowledges durable acceptance. | Alert on oldest pending outbox age and relay failures. Platform Operations restores broker connectivity; the relay resumes without a manual republish. |
+| Duplicate delivery | The consumer checks a stable event identifier against its idempotency store in the same transaction as the business effect. A previously completed event is acknowledged without repeating the effect. | Record the duplicate outcome and correlation ID. The owning service team investigates abnormal duplicate rates. |
+| Transient consumer failure | The broker or consumer retries only errors classified as retriable, using bounded exponential backoff with jitter. Each service must define a maximum attempt count and maximum retry window before production; undefined values are an architecture-review blocker. | Expose attempt count, next retry time, error category, event ID, and correlation ID in telemetry. |
+| Permanent or exhausted failure | A non-retriable contract, authorization, or validation failure, or exhaustion of the configured retry budget, sends the original event and failure metadata to the DLQ. | Alert immediately for critical business flows and on DLQ age or volume for all flows. The consumer owner leads triage. |
+| Partial or inconsistent outcome | Reconciliation compares the producer system of record, outbox publication state, broker evidence, idempotency records, and consumer state. | The business process owner confirms the intended outcome; the service owner repairs or compensates it using an auditable operation. |
+
+#### DLQ triage and replay procedure
+
+1. The on-call responder acknowledges the alert and identifies the affected event, correlation ID, consumer, error category, and retry history.
+2. The consumer owner determines the root cause and classifies the event as recoverable, compensating, or permanently rejected.
+3. The responsible team fixes the dependency, data, contract, configuration, or code issue and validates the correction outside production.
+4. An authorized operator records the change or incident reference and approves replay. Bulk replay requires change control and rate limiting.
+5. Replay preserves the original event identifier, payload, schema version, and correlation context. The idempotent consumer ensures an already completed business effect is not repeated.
+6. After replay, the service owner confirms successful processing, and the business process owner performs reconciliation against the system of record.
+7. The DLQ item is closed only after processing evidence and reconciliation results are retained for audit.
+
+DLQ messages must not be edited in place. If correction is required, create a new, traceable event that references the failed event and follows the normal authorization and validation path.
+
+#### Operational ownership
+
+| Activity | Accountable role | Required outcome |
+|---|---|---|
+| Alert definition and routing | Platform Operations / SRE | Actionable alerts for outbox age, relay failures, retry exhaustion, DLQ depth and age, and reconciliation gaps |
+| Broker and relay recovery | Platform Operations / SRE | Broker availability restored and pending outbox records drained safely |
+| Consumer triage and defect correction | Owning service team | Root cause removed and replay readiness demonstrated |
+| Replay authorization and execution | Service owner and authorized operator | Controlled replay with audit evidence and rate limits |
+| Business reconciliation | Business process owner with service owner | System-of-record and downstream outcomes agree, or an approved compensation is completed |
+
+A flow is considered recovered only when pending outbox records are published, the broker backlog is within its workload-specific objective, replayed events are processed or explicitly rejected, and reconciliation shows no unexplained missing or duplicate business effects.
 
 ## 11. Observability and operations
 
